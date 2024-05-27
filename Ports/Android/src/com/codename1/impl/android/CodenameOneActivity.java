@@ -518,7 +518,13 @@ public class CodenameOneActivity extends Activity {
             requestForPermission = false;
             return;
         }
-        if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+        boolean permissionGranted = true;
+        for (int grantResult : grantResults) {
+            if (grantResult != PackageManager.PERMISSION_GRANTED) {
+                permissionGranted = false;
+            }
+        }
+        if (permissionGranted) {
             Log.i("Codename One", "PERMISSION_GRANTED");
         } else {
             // Permission Denied

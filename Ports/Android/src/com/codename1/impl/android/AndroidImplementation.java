@@ -10656,63 +10656,82 @@ public class AndroidImplementation extends CodenameOneImplementation implements 
             return new ArrayList<String>();
         }
     }
-    
-    public static boolean checkForPermission(String permission, String description, boolean forceAsk){
+
+    public static boolean checkForPermission(String permission, String description, boolean forceAsk) {
+        return checkForPermissions(new String[]{permission}, description, forceAsk);
+    }
+
+    public static boolean checkForPermissions(String[] permissions, String description, boolean forceAsk){
         //before sdk 23 no need to ask for permission
         if(android.os.Build.VERSION.SDK_INT < 23){
             return true;
         }
 
-        String prompt = Display.getInstance().getProperty(permission, description);
+        String prompt = description;
+        for (String permission : permissions) {
+            prompt = Display.getInstance().getProperty(permission, null);
+        }
+        if (prompt == null) {
+            prompt = description;
+        }
 
-        if (android.support.v4.content.ContextCompat.checkSelfPermission(getContext(),
-                permission)
-                != PackageManager.PERMISSION_GRANTED) {
-
-            if (getActivity() == null) {
-                return false;
-            }
-
-            // Should we show an explanation?
-            if (!forceAsk && android.support.v4.app.ActivityCompat.shouldShowRequestPermissionRationale(getActivity(),
-                    permission)) {
-
-                // Show an expanation to the user *asynchronously* -- don't block
-                if(Dialog.show("Requires permission", prompt, "Ask again", "Don't Ask")){
-                    return checkForPermission(permission, description, true);
-                }else {
-                    return false;
-                }
-            } else {
-
-                // No explanation needed, we can request the permission.
-                ((CodenameOneActivity)getActivity()).setRequestForPermission(true);
-                ((CodenameOneActivity)getActivity()).setWaitingForPermissionResult(true);
-                android.support.v4.app.ActivityCompat.requestPermissions(getActivity(),
-                        new String[]{permission},
-                        1);
-                //wait for a response
-                Display.getInstance().invokeAndBlock(new Runnable() {
-                    @Override
-                    public void run() {
-                        while(((CodenameOneActivity)getActivity()).isRequestForPermission()) {
-                            try {
-                                Thread.sleep(50);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }
-                });
-                //check again if the permission is given after the dialog was displayed
-                return android.support.v4.content.ContextCompat.checkSelfPermission(getActivity(),
-                        permission) == PackageManager.PERMISSION_GRANTED;
-
+        boolean allowed = true;
+        for (String permission : permissions) {
+            if (
+                    android.support.v4.content.ContextCompat.checkSelfPermission(getContext(),
+                            permission)
+                            != PackageManager.PERMISSION_GRANTED
+            ) {
+                allowed = false;
             }
         }
+        if (allowed) {
+            return true;
+        }
+
+        if (getActivity() == null) {
+            return false;
+        }
+
+        boolean requiresExplanation = false;
+        for (String permission : permissions) {
+            if (!forceAsk && android.support.v4.app.ActivityCompat.shouldShowRequestPermissionRationale(getActivity(),
+                    permission)) {
+                requiresExplanation = true;
+            }
+        }
+        if (requiresExplanation) {
+            // Show an expanation to the user *asynchronously* -- don't block
+            if(Dialog.show("Requires permission", prompt, "OK", "Cancel")){
+                return checkForPermissions(permissions, description, true);
+            }else {
+                return false;
+            }
+        }
+
+
+        // No explanation needed, we can request the permission.
+        ((CodenameOneActivity)getActivity()).setRequestForPermission(true);
+        ((CodenameOneActivity)getActivity()).setWaitingForPermissionResult(true);
+        android.support.v4.app.ActivityCompat.requestPermissions(getActivity(),
+                permissions,
+                1);
+        //wait for a response
+        Display.getInstance().invokeAndBlock(new Runnable() {
+            @Override
+            public void run() {
+                while(((CodenameOneActivity)getActivity()).isRequestForPermission()) {
+                    try {
+                        Thread.sleep(50);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
+
         return true;
     }
-
     public boolean isJailbrokenDevice() {
         try {
             Runtime.getRuntime().exec("su");
