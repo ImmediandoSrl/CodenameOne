@@ -6664,9 +6664,22 @@ public class AndroidImplementation extends CodenameOneImplementation implements 
     public LocationManager getLocationManager() {
         boolean permissionGranted = false;
         if (Build.VERSION.SDK_INT >= 29  && "true".equals(Display.getInstance().getProperty("android.requiresBackgroundLocationPermissionForAPI29", "false"))) {
+            if (ContextCompat.checkSelfPermission(AndroidNativeUtil.getContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                    != PackageManager.PERMISSION_GRANTED ||
+                    ContextCompat.checkSelfPermission(AndroidNativeUtil.getContext(), Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                            != PackageManager.PERMISSION_GRANTED) {
 
-            if (checkForPermission("android.permission.ACCESS_BACKGROUND_LOCATION", "This is required to get the location")) {
-                permissionGranted = true;
+                if (
+                        !checkForPermissions(new String[]{
+                                        Manifest.permission.ACCESS_BACKGROUND_LOCATION,
+                                        Manifest.permission.ACCESS_FINE_LOCATION
+                                }, "Permission required to access background location",
+                                false)
+                ) {
+                    return null;
+                } else {
+                    permissionGranted = true;
+                }
             }
 
         }
@@ -6674,7 +6687,7 @@ public class AndroidImplementation extends CodenameOneImplementation implements 
             return null;
         }
 
-
+        permissionGranted = true;
         boolean includesPlayServices = Display.getInstance().getProperty("IncludeGPlayServices", "false").equals("true");
         if (includesPlayServices && hasAndroidMarket()) {
             try {
@@ -6687,6 +6700,7 @@ public class AndroidImplementation extends CodenameOneImplementation implements 
             return AndroidLocationManager.getInstance(getContext());
         }
     }
+
 
     private String fixAttachmentPath(String attachment) {
         com.codename1.io.File cn1File = new com.codename1.io.File(attachment);
