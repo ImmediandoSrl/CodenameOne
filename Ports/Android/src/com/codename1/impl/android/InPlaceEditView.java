@@ -1266,12 +1266,12 @@ public class InPlaceEditView extends FrameLayout{
                                     @Override
                                     public void actionPerformed(ActionEvent evt) {
                                         f.removeSizeChangedListener(this);
-                                        fNext.requestFocus();
+                                	fNext.requestFocus();
                                         fNext.startEditingAsync();
                                     }
                                 });
 				if(EditorInfo.IME_ACTION_NEXT == fActionCode)
-                                    fNext.requestFocus();
+				    fNext.requestFocus();
                             }
                         });
                     }
