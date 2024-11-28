@@ -1057,6 +1057,10 @@ public class Dialog extends Form {
         if (showListener != null) {
             showListener.fireActionEvent(new ActionEvent(this,ActionEvent.Type.Show));
         }
+
+        if(getEditOnShow() != null) {
+            getEditOnShow().startEditingAsync();
+        }
     }
     
     /**
